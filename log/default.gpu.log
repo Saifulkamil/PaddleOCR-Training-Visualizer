@@ -1,0 +1,9 @@
+index,uuid,driver_version,name,gpu_serial,display_active,display_mode
+0,GPU-b4147cc7-5dbf-56dc-152c-f29d15855473,576.28,NVIDIA GeForce RTX 3050 Laptop GPU,[N/A],Enabled,[Requested functionality has been deprecated]
+
+pid,process_name,gpu_uuid,gpu_name,used_memory
+index,utilization_gpu,memory_total,memory_used,memory_free,timestamp
+0,1,4096,299,3666,2026/05/05 17:52:58.172
+0,15,4096,3333,632,2026/05/05 17:53:03.225
+0,79,4096,3765,200,2026/05/05 17:53:08.283
+0,75,4096,3768,197,2026/05/05 17:53:13.358

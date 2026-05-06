@@ -11,8 +11,8 @@ ocr = PaddleOCR(
     use_doc_orientation_classify=False, 
     use_doc_unwarping=False, 
     use_textline_orientation=False)
-result = ocr.predict("./data_ref")
+result = ocr.predict("./data_test/indicator_stasiun_AL26013010148_260130_101419.jpg")
 for res in result:
     res.print()
-    res.save_to_img("output3")
-    res.save_to_json("output3")
+    res.save_to_img("output4")
+    res.save_to_json("output4")

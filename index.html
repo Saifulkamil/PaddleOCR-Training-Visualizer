@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaddleOCR Training Visualizer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a12;--card:#12121f;--accent:#e040fb;--cyan:#00e5ff;--green:#69f0ae;--red:#ff5252;--yellow:#ffd740;--border:rgba(255,255,255,0.08);--text:rgba(255,255,255,0.75);--text-dim:rgba(255,255,255,0.4);--prog-bg:rgba(255,255,255,0.06);--train-bar-bg:linear-gradient(180deg,rgba(18,18,31,0.95),rgba(10,10,18,0.95))}
+[data-theme="light"]{--bg:#f5f6fa;--card:#ffffff;--accent:#aa00ff;--cyan:#00b8d4;--green:#00c853;--red:#d50000;--yellow:#f57f17;--border:rgba(0,0,0,0.1);--text:rgba(0,0,0,0.85);--text-dim:rgba(0,0,0,0.55);--prog-bg:rgba(0,0,0,0.06);--train-bar-bg:linear-gradient(180deg,rgba(255,255,255,0.95),rgba(245,246,250,0.95))}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;min-height:100vh;overflow-x:hidden;transition:background 0.3s, color 0.3s}
+.mono{font-family:'JetBrains Mono','Fira Code',monospace}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border)}
+header h1{font-size:18px;font-weight:600;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.status{display:flex;align-items:center;gap:8px;font-size:13px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#666;transition:background .3s}
+.status-dot.connected{background:var(--green)}
+.status-dot.waiting{background:var(--yellow)}
+.status-dot.disconnected{background:var(--red)}
+#demo-badge{display:none;background:rgba(255,215,64,0.15);color:var(--yellow);padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:1px;margin-right:8px}
+.main{display:grid;grid-template-columns:55% 45%;gap:16px;padding:16px 24px;min-height:calc(100vh - 130px)}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+.nn-container{background:var(--card);border:1px solid var(--border);border-radius:12px;position:relative;overflow:hidden}
+#nn-canvas{width:100%;height:420px;display:block}
+.right-panel{display:flex;flex-direction:column;gap:12px}
+.metrics{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+@media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;transition:background .3s, border-color .3s, box-shadow .3s}
+[data-theme="light"] .metric-card,[data-theme="light"] .chart-box,[data-theme="light"] .nn-container,[data-theme="light"] .sub-loss,[data-theme="light"] .eval-card,[data-theme="light"] .best-banner{box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.metric-card .label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim);margin-bottom:6px}
+.metric-card .value{font-size:22px;font-weight:600;transition:opacity .3s}
+.metric-card .value.flash{opacity:0.3}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
+.chart-box h3{font-size:12px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.chart-box canvas{width:100%;display:block}
+footer{padding:12px 24px;border-top:1px solid var(--border)}
+.progress-wrap{background:var(--prog-bg);border-radius:6px;height:28px;position:relative;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#7c4dff,var(--accent));border-radius:6px;transition:width .3s ease;min-width:2px}
+.progress-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:500;white-space:nowrap;color:var(--text);text-shadow:0 0 4px var(--bg)}
+.sub-losses{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:4px}
+.sub-loss{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px 10px;text-align:center}
+.sub-loss .sl-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)}
+.sub-loss .sl-val{font-size:15px;font-weight:600;margin-top:2px}
+
+/* === Eval Section (Animated) === */
+.eval-section{margin-top:20px;padding:0 14px 14px;display:none;opacity:0;transform:translateY(20px);transition:opacity .5s ease, transform .5s ease}
+.eval-section.show{display:block;opacity:1;transform:translateY(0)}
+.eval-section.show .eval-panel{animation:evalGlow 2s ease-in-out infinite alternate}
+@keyframes evalGlow{0%{box-shadow:0 0 8px rgba(0,229,255,.15),inset 0 0 4px rgba(0,229,255,.05)}100%{box-shadow:0 0 20px rgba(124,77,255,.25),inset 0 0 8px rgba(124,77,255,.08)}}
+.eval-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;position:relative;overflow:hidden;transition:background .3s,border-color .3s}
+.eval-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.eval-header-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),#7c4dff);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;animation:evalIconPulse 1.5s ease-in-out infinite}
+@keyframes evalIconPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.eval-header-title{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;background:linear-gradient(135deg,var(--cyan),#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.eval-header-status{margin-left:auto;font-size:11px;color:var(--text-dim);font-weight:500}
+.eval-progress-wrap{position:relative;height:28px;background:var(--prog-bg);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.eval-progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),#7c4dff,var(--accent));border-radius:8px;transition:width .4s ease;min-width:2px;position:relative}
+.eval-progress-fill::after{content:'';position:absolute;top:0;right:0;width:60px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3));animation:evalScan 1.2s ease-in-out infinite}
+@keyframes evalScan{0%{opacity:0;transform:translateX(-60px)}50%{opacity:1}100%{opacity:0;transform:translateX(20px)}}
+.eval-progress-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:600;white-space:nowrap;color:var(--text);text-shadow:0 0 6px var(--bg);z-index:1}
+.eval-metrics{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.eval-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 10px;text-align:center;transition:transform .3s,box-shadow .3s,background .3s;position:relative;overflow:hidden}
+.eval-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,229,255,.12)}
+.eval-card .el-label{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:4px}
+.eval-card .el-val{font-size:18px;font-weight:700;margin-top:2px;transition:color .3s}
+.eval-card .el-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--prog-bg);overflow:hidden}
+.eval-card .el-bar-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.eval-done-badge{display:none;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;background:linear-gradient(135deg,rgba(105,240,174,.12),rgba(0,200,83,.12));border:1px solid rgba(105,240,174,.2);font-size:12px;font-weight:600;color:var(--green);margin-top:8px;animation:evalDonePop .4s cubic-bezier(.175,.885,.32,1.275)}
+.eval-done-badge.show{display:inline-flex}
+@keyframes evalDonePop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* Best Accuracy Banner */
+.best-banner{background:linear-gradient(135deg,rgba(124,77,255,.08),rgba(224,64,251,.08));border:1px solid rgba(224,64,251,.2);border-radius:12px;padding:14px 18px;margin:0 14px 14px;display:none;position:relative;overflow:hidden}
+.best-banner.show{display:block;animation:bestSlideIn .5s cubic-bezier(.4,0,.2,1)}
+@keyframes bestSlideIn{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
+.best-banner::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent 40%,rgba(255,255,255,.04) 50%,transparent 60%);animation:bestShine 4s ease-in-out infinite}
+@keyframes bestShine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.best-title{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.best-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px}
+.best-item{text-align:center}
+.best-item .bi-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)}
+.best-item .bi-val{font-size:15px;font-weight:700;color:var(--green);margin-top:3px}
+
+/* === Training Control Bar === */
+.train-bar{display:flex;align-items:center;gap:14px;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--train-bar-bg);transition:background 0.3s}
+.train-status-wrap{display:flex;align-items:center;gap:8px;min-width:140px}
+.train-pulse{width:10px;height:10px;border-radius:50%;background:#666;position:relative;flex-shrink:0}
+.train-pulse.idle{background:#666}
+.train-pulse.running{background:var(--green);box-shadow:0 0 8px var(--green)}
+.train-pulse.running::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--green);animation:pulse-ring 1.5s ease-out infinite;opacity:0}
+.train-pulse.stopping{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+.train-pulse.error{background:var(--red);box-shadow:0 0 6px var(--red)}
+@keyframes pulse-ring{0%{transform:scale(.8);opacity:.6}100%{transform:scale(1.8);opacity:0}}
+.train-status-label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)}
+.train-actions{display:flex;gap:8px;margin-left:auto}
+.btn-train{padding:8px 22px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s ease;display:inline-flex;align-items:center;gap:6px;letter-spacing:.5px;text-transform:uppercase;position:relative;overflow:hidden}
+.btn-train::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s}
+.btn-train:hover::before{opacity:1}
+.btn-train:active{transform:scale(.97)}
+.btn-train:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-start{background:linear-gradient(135deg,#00c853,#00e676);color:#0a0a12}
+.btn-start::before{background:linear-gradient(135deg,#00e676,#69f0ae)}
+.btn-start:disabled{background:linear-gradient(135deg,#2e7d32,#388e3c)}
+.btn-stop{background:linear-gradient(135deg,#d32f2f,#ff5252);color:#fff}
+.btn-stop::before{background:linear-gradient(135deg,#ff5252,#ff8a80)}
+.btn-stop:disabled{background:linear-gradient(135deg,#5d1a1a,#6d2020)}
+.train-toast{position:fixed;top:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;transform:translateX(120%);transition:transform .35s cubic-bezier(.4,0,.2,1);pointer-events:none;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.train-toast.show{transform:translateX(0)}
+.train-toast.success{background:linear-gradient(135deg,rgba(0,200,83,.9),rgba(0,230,118,.9));color:#0a0a12}
+.train-toast.error{background:linear-gradient(135deg,rgba(211,47,47,.9),rgba(255,82,82,.9));color:#fff}
+.btn-train .spinner{width:14px;height:14px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;display:none}
+.btn-train.loading .spinner{display:inline-block}
+.btn-train.loading .btn-icon{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* === Start Modal === */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:8000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .25s}
+.modal-overlay.open{display:flex;opacity:1}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 30px;width:400px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(.92);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.modal-overlay.open .modal-box{transform:scale(1)}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.modal-title span{background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.modal-options{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.modal-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;background:transparent}
+.modal-opt:hover{border-color:rgba(224,64,251,.3);background:rgba(224,64,251,.04)}
+.modal-opt.selected{border-color:var(--accent);background:rgba(224,64,251,.08)}
+.modal-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--text-dim);position:relative;flex-shrink:0;transition:border-color .2s}
+.modal-opt.selected .modal-radio{border-color:var(--accent)}
+.modal-opt.selected .modal-radio::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--accent)}
+.modal-opt-text{font-size:13px;font-weight:500}
+.modal-opt-desc{font-size:11px;color:var(--text-dim);margin-top:2px}
+.modal-ckpt-wrap{margin-bottom:18px;display:none}
+.modal-ckpt-wrap.show{display:block}
+.modal-ckpt-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px}
+.modal-ckpt-select{width:100%;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.modal-ckpt-select:focus{border-color:var(--accent)}
+.modal-ckpt-select option{background:var(--card);color:var(--text)}
+.modal-ckpt-loading{font-size:12px;color:var(--text-dim);padding:8px 0}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end}
+.btn-modal{padding:9px 24px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-modal-cancel{background:rgba(255,255,255,.06);color:var(--text)}
+.btn-modal-cancel:hover{background:rgba(255,255,255,.1)}
+.btn-modal-confirm{background:linear-gradient(135deg,#00c853,#00e676);color:#0a0a12}
+.btn-modal-confirm:hover{background:linear-gradient(135deg,#00e676,#69f0ae)}
+.btn-modal-confirm:disabled{opacity:.4;cursor:not-allowed}
+/* === Config Drawer === */
+.cfg-toggle{padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,.04);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.cfg-toggle:hover{background:rgba(255,255,255,.08);border-color:rgba(224,64,251,.3)}
+.cfg-toggle.active{border-color:var(--accent);background:rgba(224,64,251,.08)}
+.cfg-drawer{position:fixed;top:0;right:0;width:420px;max-width:95vw;height:100vh;background:var(--card);border-left:1px solid var(--border);z-index:7000;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.5)}
+.cfg-drawer.open{transform:translateX(0)}
+.cfg-drawer-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.cfg-drawer-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.cfg-drawer-title span{background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.cfg-close{width:32px;height:32px;border:none;background:rgba(255,255,255,.06);border-radius:6px;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.cfg-close:hover{background:rgba(255,82,82,.2);color:var(--red)}
+.cfg-body{flex:1;overflow-y:auto;padding:16px 20px 100px}
+.cfg-body::-webkit-scrollbar{width:4px}
+.cfg-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.cfg-section{margin-bottom:20px}
+.cfg-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);font-weight:600;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(224,64,251,.15)}
+.cfg-field{margin-bottom:12px}
+.cfg-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.cfg-input{width:100%;padding:9px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.cfg-input:focus{border-color:var(--accent)}
+.cfg-input[type=number]{font-family:'JetBrains Mono','Fira Code',monospace}
+.cfg-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cfg-check-wrap{display:flex;align-items:center;gap:10px;padding:8px 0}
+.cfg-check{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.cfg-check-label{font-size:13px;cursor:pointer}
+.cfg-footer{position:absolute;bottom:0;left:0;right:0;padding:14px 20px;background:linear-gradient(0deg,var(--card) 80%,transparent);border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.cfg-save{padding:10px 28px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,var(--accent),#7c4dff);color:#fff;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.cfg-save:hover{box-shadow:0 4px 20px rgba(224,64,251,.3)}
+.cfg-save:disabled{opacity:.4;cursor:not-allowed}
+.cfg-reload{padding:10px 20px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--text);transition:all .2s}
+.cfg-reload:hover{background:rgba(255,255,255,.06)}
+.cfg-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:6999;display:none;opacity:0;transition:opacity .25s}
+.cfg-overlay.open{display:block;opacity:1}
+.cfg-status{font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:12px;display:none}
+.cfg-status.ok{display:block;background:rgba(105,240,174,.1);color:var(--green)}
+.cfg-status.err{display:block;background:rgba(255,82,82,.1);color:var(--red)}
+</style>
+</head>
+<body>
+<header>
+ <h1>⚡ PaddleOCR Neural Network</h1>
+ <div class="status">
+  <span id="demo-badge">MODE DEMO</span>
+  <button id="btn-theme" onclick="toggleTheme()" title="Ganti Tema" style="background:transparent;border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;padding:4px 10px;border-radius:6px;margin-right:8px;transition:all .2s">☀️</button>
+  <span class="status-dot" id="status-dot"></span>
+  <span id="status-text">Menghubungkan...</span>
+ </div>
+</header>
+
+<!-- Training Control Bar -->
+<div class="train-bar">
+ <div class="train-status-wrap">
+  <span class="train-pulse" id="train-pulse"></span>
+  <span class="train-status-label" id="train-status-label">IDLE</span>
+ </div>
+ <div class="train-actions">
+  <button class="cfg-toggle" id="cfg-toggle" onclick="toggleConfig()">⚙ Config</button>
+  <button class="btn-train btn-start" id="btn-start" onclick="trainStart()">
+   <span class="btn-icon">▶</span><span class="spinner"></span> Start
+  </button>
+  <button class="btn-train btn-stop" id="btn-stop" onclick="trainStop()" disabled>
+   <span class="btn-icon">■</span><span class="spinner"></span> Stop
+  </button>
+ </div>
+</div>
+<div id="train-toast" class="train-toast"></div>
+<div class="cfg-overlay" id="cfg-overlay" onclick="toggleConfig()"></div>
+<div class="cfg-drawer" id="cfg-drawer">
+ <div class="cfg-drawer-header">
+  <div class="cfg-drawer-title">⚙ <span>Training Config</span></div>
+  <button class="cfg-close" onclick="toggleConfig()">✕</button>
+ </div>
+ <div class="cfg-body">
+  <div id="cfg-status" class="cfg-status"></div>
+
+  <div class="cfg-section">
+   <div class="cfg-section-title">Training</div>
+   <div class="cfg-row">
+    <div class="cfg-field"><div class="cfg-label">Epoch</div><input class="cfg-input" type="number" id="cfg-epoch" min="1"></div>
+    <div class="cfg-field"><div class="cfg-label">Learning Rate</div><input class="cfg-input" type="number" id="cfg-lr" step="0.0001" min="0"></div>
+   </div>
+   <div class="cfg-row">
+    <div class="cfg-field"><div class="cfg-label">Warmup Epoch</div><input class="cfg-input" type="number" id="cfg-warmup" min="0"></div>
+    <div class="cfg-field"><div class="cfg-label">Num Workers</div><input class="cfg-input" type="number" id="cfg-workers" min="0"></div>
+   </div>
+   <div class="cfg-row">
+    <div class="cfg-field"><div class="cfg-label">Batch Size (Train)</div><input class="cfg-input" type="number" id="cfg-bs-train" min="1"></div>
+    <div class="cfg-field"><div class="cfg-label">Batch Size (Eval)</div><input class="cfg-input" type="number" id="cfg-bs-eval" min="1"></div>
+   </div>
+   <div class="cfg-check-wrap">
+    <input type="checkbox" class="cfg-check" id="cfg-gpu"><label class="cfg-check-label" for="cfg-gpu">Use GPU</label>
+   </div>
+  </div>
+
+  <div class="cfg-section">
+   <div class="cfg-section-title">Dataset</div>
+   <div class="cfg-field"><div class="cfg-label">Train Data Dir</div><input class="cfg-input" type="text" id="cfg-train-dir"></div>
+   <div class="cfg-field"><div class="cfg-label">Train Label File</div><input class="cfg-input" type="text" id="cfg-train-label"></div>
+   <div class="cfg-field"><div class="cfg-label">Eval Data Dir</div><input class="cfg-input" type="text" id="cfg-eval-dir"></div>
+   <div class="cfg-field"><div class="cfg-label">Eval Label File</div><input class="cfg-input" type="text" id="cfg-eval-label"></div>
+  </div>
+
+  <div class="cfg-section">
+   <div class="cfg-section-title">Model</div>
+   <div class="cfg-field"><div class="cfg-label">Pretrained Model</div><input class="cfg-input" type="text" id="cfg-pretrained"></div>
+   <div class="cfg-field"><div class="cfg-label">Checkpoints</div><input class="cfg-input" type="text" id="cfg-checkpoints"></div>
+   <div class="cfg-field"><div class="cfg-label">Save Model Dir</div><input class="cfg-input" type="text" id="cfg-save-dir"></div>
+  </div>
+
+  <div class="cfg-section">
+   <div class="cfg-section-title">Logging & Eval</div>
+   <div class="cfg-row">
+    <div class="cfg-field"><div class="cfg-label">Save Epoch Step</div><input class="cfg-input" type="number" id="cfg-save-step" min="1"></div>
+    <div class="cfg-field"><div class="cfg-label">Print Batch Step</div><input class="cfg-input" type="number" id="cfg-print-step" min="1"></div>
+   </div>
+   <div class="cfg-row">
+    <div class="cfg-field"><div class="cfg-label">Eval Start Step</div><input class="cfg-input" type="number" id="cfg-eval-start" min="0"></div>
+    <div class="cfg-field"><div class="cfg-label">Eval Interval</div><input class="cfg-input" type="number" id="cfg-eval-interval" min="1"></div>
+   </div>
+  </div>
+
+  <div class="cfg-section">
+   <div class="cfg-section-title">PostProcess</div>
+   <div class="cfg-row">
+    <div class="cfg-field"><div class="cfg-label">Box Thresh</div><input class="cfg-input" type="number" id="cfg-box-thresh" step="0.05" min="0" max="1"></div>
+    <div class="cfg-field"><div class="cfg-label">Unclip Ratio</div><input class="cfg-input" type="number" id="cfg-unclip" step="0.1" min="0"></div>
+   </div>
+  </div>
+ </div>
+ <div class="cfg-footer">
+  <button class="cfg-reload" onclick="loadConfig()">Reload</button>
+  <button class="cfg-save" id="cfg-save-btn" onclick="saveConfig()">Save Config</button>
+ </div>
+</div>
+
+<!-- Start Training Modal -->
+<div class="modal-overlay" id="start-modal">
+ <div class="modal-box">
+  <div class="modal-title">🚀 <span>Mulai Training</span></div>
+  <div class="modal-options">
+   <div class="modal-opt selected" id="opt-fresh" onclick="selectTrainMode('fresh')">
+    <div class="modal-radio"></div>
+    <div><div class="modal-opt-text">Mulai Baru</div><div class="modal-opt-desc">Training dari awal tanpa checkpoint</div></div>
+   </div>
+   <div class="modal-opt" id="opt-resume" onclick="selectTrainMode('resume')">
+    <div class="modal-radio"></div>
+    <div><div class="modal-opt-text">Lanjut dari Checkpoint</div><div class="modal-opt-desc">Resume training dari checkpoint yang tersedia</div></div>
+   </div>
+  </div>
+  <div class="modal-ckpt-wrap" id="ckpt-wrap">
+   <div class="modal-ckpt-label">Pilih Checkpoint</div>
+   <div class="modal-ckpt-loading" id="ckpt-loading">Memuat checkpoint...</div>
+   <select class="modal-ckpt-select" id="ckpt-select" style="display:none"></select>
+  </div>
+  <div class="modal-footer">
+   <button class="btn-modal btn-modal-cancel" onclick="closeStartModal()">Batal</button>
+   <button class="btn-modal btn-modal-confirm" id="btn-modal-confirm" onclick="confirmStart()">Mulai</button>
+  </div>
+ </div>
+</div>
+
+<!-- Demo Training Modal -->
+<div class="modal-overlay" id="demo-modal">
+ <div class="modal-box">
+  <div class="modal-title">🤖 <span>Demo Mode</span></div>
+  <div class="modal-demo-info">
+   <div class="modal-demo-icon">🤖</div>
+   <div class="modal-demo-text">Gunakan mode demo untuk melihat simulasi training tanpa memerlukan dataset</div>
+  </div>
+  <div class="modal-footer">
+   <button class="btn-modal btn-modal-cancel" onclick="closeDemoModal()">Batal</button>
+   <button class="btn-modal btn-modal-confirm" id="btn-modal-confirm-demo" onclick="startDemo()">Mulai Demo</button>
+  </div>
+ </div>
+</div>
+
+<div class="main">
+ <div class="nn-container">
+  <canvas id="nn-canvas"></canvas>
+  <!-- Eval Section (inside neural graph) -->
+  <div class="eval-section" id="eval-section">
+   <div class="eval-panel">
+    <div class="eval-header">
+     <div class="eval-header-icon">🔍</div>
+     <div class="eval-header-title">Evaluation</div>
+     <div class="eval-header-status" id="eval-status">Menunggu...</div>
+    </div>
+    <div class="eval-progress-wrap">
+     <div class="eval-progress-fill" id="eval-prog-fill" style="width:0%"></div>
+     <div class="eval-progress-text mono" id="eval-prog-text">Evaluating...</div>
+    </div>
+    <div class="eval-metrics" id="eval-metrics">
+     <div class="eval-card">
+      <div class="el-label">Precision</div>
+      <div class="el-val mono" id="ev-precision" style="color:var(--cyan)">—</div>
+      <div class="el-bar"><div class="el-bar-fill" id="ev-precision-bar" style="width:0%;background:var(--cyan)"></div></div>
+     </div>
+     <div class="eval-card">
+      <div class="el-label">Recall</div>
+      <div class="el-val mono" id="ev-recall" style="color:var(--yellow)">—</div>
+      <div class="el-bar"><div class="el-bar-fill" id="ev-recall-bar" style="width:0%;background:var(--yellow)"></div></div>
+     </div>
+     <div class="eval-card">
+      <div class="el-label">Hmean</div>
+      <div class="el-val mono" id="ev-hmean" style="color:var(--green)">—</div>
+      <div class="el-bar"><div class="el-bar-fill" id="ev-hmean-bar" style="width:0%;background:var(--green)"></div></div>
+     </div>
+     <div class="eval-card">
+      <div class="el-label">FPS</div>
+      <div class="el-val mono" id="ev-fps" style="color:var(--accent)">—</div>
+      <div class="el-bar"><div class="el-bar-fill" id="ev-fps-bar" style="width:0%;background:var(--accent)"></div></div>
+     </div>
+    </div>
+    <div class="eval-done-badge" id="eval-done-badge">✅ Evaluasi selesai</div>
+   </div>
+  </div>
+  <!-- Best Accuracy Banner -->
+  <div class="best-banner" id="best-banner">
+   <div class="best-title">⭐ Best Model Accuracy</div>
+   <div class="best-grid">
+    <div class="best-item"><div class="bi-label">Hmean</div><div class="bi-val mono" id="best-hmean">—</div></div>
+    <div class="best-item"><div class="bi-label">Precision</div><div class="bi-val mono" id="best-precision">—</div></div>
+    <div class="best-item"><div class="bi-label">Recall</div><div class="bi-val mono" id="best-recall">—</div></div>
+    <div class="best-item"><div class="bi-label">FPS</div><div class="bi-val mono" id="best-fps">—</div></div>
+    <div class="best-item"><div class="bi-label">Epoch</div><div class="bi-val mono" id="best-epoch">—</div></div>
+   </div>
+  </div>
+ </div>
+ <div class="right-panel">
+  <div class="metrics">
+   <div class="metric-card"><div class="label">Total Loss</div><div class="value mono" id="m-loss" style="color:var(--red)">—</div></div>
+   <div class="metric-card"><div class="label">Learning Rate</div><div class="value mono" id="m-lr" style="color:var(--yellow)">—</div></div>
+   <div class="metric-card"><div class="label">GPU Reserved</div><div class="value mono" id="m-gpu" style="color:var(--cyan)">—</div></div>
+   <div class="metric-card"><div class="label">GPU Allocated</div><div class="value mono" id="m-gpu-alloc" style="color:var(--cyan)">—</div></div>
+   <div class="metric-card"><div class="label">Speed (IPS)</div><div class="value mono" id="m-ips" style="color:var(--green)">—</div></div>
+   <div class="metric-card"><div class="label">Batch Cost</div><div class="value mono" id="m-batch-cost" style="color:var(--accent)">—</div></div>
+   <div class="metric-card"><div class="label">Reader Cost</div><div class="value mono" id="m-reader-cost" style="color:var(--text)">—</div></div>
+   <div class="metric-card"><div class="label">Avg Samples</div><div class="value mono" id="m-avg-samples" style="color:var(--text)">—</div></div>
+  </div>
+  <div class="sub-losses" id="sub-losses">
+   <div class="sub-loss"><div class="sl-label">Shrink</div><div class="sl-val mono" id="sl-shrink">—</div></div>
+   <div class="sub-loss"><div class="sl-label">Threshold</div><div class="sl-val mono" id="sl-thresh">—</div></div>
+   <div class="sub-loss"><div class="sl-label">Binary</div><div class="sl-val mono" id="sl-binary">—</div></div>
+   <div class="sub-loss"><div class="sl-label">CBN</div><div class="sl-val mono" id="sl-cbn">—</div></div>
+  </div>
+  <div class="chart-box"><h3>Loss History</h3><canvas id="loss-chart" height="140"></canvas></div>
+  <div class="chart-box"><h3>Sub-Losses</h3><canvas id="acc-chart" height="120"></canvas></div>
+  </div>
+</div>
+<footer>
+ <div class="progress-wrap"><div class="progress-fill" id="prog-fill" style="width:0%"></div><div class="progress-text mono" id="prog-text">Menunggu data...</div></div>
+</footer>
+
+<script>
+// ============== THEME ==============
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('btn-theme').textContent = '🌙';
+  }
+}
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if (isLight) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('theme', 'dark');
+    document.getElementById('btn-theme').textContent = '☀️';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+    document.getElementById('btn-theme').textContent = '🌙';
+  }
+}
+initTheme();
+
+// ============== STATE ==============
+const MAX_PTS = 100;
+let dataPoints = [];
+let latestData = null;
+let wsStatus = 'disconnected';
+let isDemo = false;
+let demoTimer = null;
+let demoStep = 0;
+
+// ============== NEURAL NETWORK ==============
+const LAYERS = [
+  {n:6, label:'Input'}, {n:8, label:'CNN'}, {n:8, label:'BiLSTM'},
+  {n:6, label:'Attn'}, {n:4, label:'Output'}
+];
+let weights = [], activations = [], signals = [];
+
+function initNN() {
+  weights = [];
+  activations = LAYERS.map(l => Array.from({length:l.n}, () => Math.random()*0.3));
+  for (let i = 0; i < LAYERS.length-1; i++) {
+    const w = [];
+    for (let a = 0; a < LAYERS[i].n; a++) {
+      const row = [];
+      for (let b = 0; b < LAYERS[i+1].n; b++) row.push((Math.random()-0.5)*0.8);
+      w.push(row);
+    }
+    weights.push(w);
+  }
+}
+initNN();
+
+function forwardPass(loss) {
+  // Set input activations based on loss
+  const intensity = Math.min(loss / 3, 1);
+  activations[0] = activations[0].map(() => 0.3 + Math.random() * 0.7 * intensity);
+  for (let l = 1; l < LAYERS.length; l++) {
+    for (let j = 0; j < LAYERS[l].n; j++) {
+      let sum = 0;
+      for (let i = 0; i < LAYERS[l-1].n; i++) sum += activations[l-1][i] * weights[l-1][i][j];
+      activations[l][j] = 1 / (1 + Math.exp(-sum)); // sigmoid
+    }
+  }
+  // Mutate weights slightly
+  for (let l = 0; l < weights.length; l++)
+    for (let i = 0; i < weights[l].length; i++)
+      for (let j = 0; j < weights[l][i].length; j++)
+        weights[l][i][j] = Math.max(-1, Math.min(1, weights[l][i][j] + (Math.random()-0.5)*0.06));
+}
+
+function spawnSignals(loss) {
+  const count = Math.min(12, Math.floor(3 + (loss||1) * 4));
+  for (let s = 0; s < count && signals.length < 80; s++) {
+    const li = Math.floor(Math.random() * (LAYERS.length-1));
+    const si = Math.floor(Math.random() * LAYERS[li].n);
+    const di = Math.floor(Math.random() * LAYERS[li+1].n);
+    if (Math.abs(weights[li][si][di] * activations[li][si]) > 0.15) {
+      signals.push({li, si, di, p: 0, color: Math.random()>0.5 ? '#e040fb' : '#00bcd4'});
+    }
+  }
+}
+
+// ============== CANVAS RENDERING ==============
+const nnCanvas = document.getElementById('nn-canvas');
+const nnCtx = nnCanvas.getContext('2d');
+
+function resizeNN() {
+  const r = nnCanvas.parentElement.getBoundingClientRect();
+  nnCanvas.width = r.width * devicePixelRatio;
+  nnCanvas.height = 420 * devicePixelRatio;
+  nnCanvas.style.height = '420px';
+  nnCtx.scale(devicePixelRatio, devicePixelRatio);
+}
+resizeNN();
+window.addEventListener('resize', resizeNN);
+
+function getNodePos(li, ni) {
+  const W = nnCanvas.width / devicePixelRatio, H = 420;
+  const px = 60, py = 30;
+  const lx = px + (W - 2*px) / (LAYERS.length-1) * li;
+  const count = LAYERS[li].n;
+  const gap = (H - 2*py) / (count-1 || 1);
+  const ly = py + gap * ni;
+  return [lx, ly];
+}
+
+function lerpColor(a, b, t) {
+  const [ra,ga,ba] = a, [rb,gb,bb] = b;
+  return `rgb(${Math.round(ra+(rb-ra)*t)},${Math.round(ga+(gb-ga)*t)},${Math.round(ba+(bb-ba)*t)})`;
+}
+
+function bezierPoint(x0,y0,x1,y1,t) {
+  const cx0 = x0 + (x1-x0)*0.4, cx1 = x1 - (x1-x0)*0.4;
+  const u = 1-t;
+  return [u*u*u*x0+3*u*u*t*cx0+3*u*t*t*cx1+t*t*t*x1, u*u*u*y0+3*u*u*t*y0+3*u*t*t*y1+t*t*t*y1];
+}
+
+function drawNN() {
+  const W = nnCanvas.width / devicePixelRatio, H = 420;
+  nnCtx.clearRect(0,0,W,H);
+
+  // Background gradient
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const bg = nnCtx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.6);
+  if (isLight) { bg.addColorStop(0,'#f0f1f5'); bg.addColorStop(1,'#e8e9ee'); }
+  else { bg.addColorStop(0,'#0d0d1a'); bg.addColorStop(1,'#0a0a12'); }
+  nnCtx.fillStyle = bg; nnCtx.fillRect(0,0,W,H);
+
+  // Draw connections
+  for (let l = 0; l < LAYERS.length-1; l++) {
+    for (let i = 0; i < LAYERS[l].n; i++) {
+      for (let j = 0; j < LAYERS[l+1].n; j++) {
+        const w = weights[l][i][j];
+        const aw = Math.abs(w);
+        const alpha = Math.max(0.05, Math.min(0.4, aw * 0.25));
+        const lw = Math.max(0.3, Math.min(2.5, aw * 1.5));
+        let color;
+        if (w > 0.2) color = `rgba(224,64,251,${alpha})`;
+        else if (w > 0) color = `rgba(100,50,180,${alpha})`;
+        else color = `rgba(50,50,80,${alpha})`;
+        const [x0,y0] = getNodePos(l,i), [x1,y1] = getNodePos(l+1,j);
+        const cx0 = x0+(x1-x0)*0.4, cx1 = x1-(x1-x0)*0.4;
+        nnCtx.beginPath(); nnCtx.moveTo(x0,y0);
+        nnCtx.bezierCurveTo(cx0,y0,cx1,y1,x1,y1);
+        nnCtx.strokeStyle = color; nnCtx.lineWidth = lw; nnCtx.stroke();
+      }
+    }
+  }
+
+  // Draw signals
+  signals.forEach(s => {
+    const [x0,y0] = getNodePos(s.li, s.si), [x1,y1] = getNodePos(s.li+1, s.di);
+    const [sx,sy] = bezierPoint(x0,y0,x1,y1,s.p);
+    nnCtx.beginPath(); nnCtx.arc(sx,sy,3,0,Math.PI*2);
+    nnCtx.fillStyle = s.color; nnCtx.fill();
+  });
+
+  // Draw neurons
+  for (let l = 0; l < LAYERS.length; l++) {
+    for (let n = 0; n < LAYERS[l].n; n++) {
+      const [x,y] = getNodePos(l,n);
+      const act = activations[l][n];
+      const col = lerpColor([0,229,255],[224,64,251], act);
+      // Glow
+      if (act > 0.65) {
+        const g = nnCtx.createRadialGradient(x,y,0,x,y,16);
+        g.addColorStop(0, `rgba(224,64,251,0.35)`); g.addColorStop(1, 'transparent');
+        nnCtx.fillStyle = g; nnCtx.fillRect(x-16,y-16,32,32);
+      }
+      nnCtx.beginPath(); nnCtx.arc(x,y,7,0,Math.PI*2);
+      nnCtx.fillStyle = isLight ? '#f0f1f5' : '#0a0a12'; nnCtx.fill();
+      nnCtx.strokeStyle = col; nnCtx.lineWidth = 2; nnCtx.stroke();
+    }
+    // Layer labels
+    const [lx] = getNodePos(l, 0);
+    nnCtx.fillStyle = isLight ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.35)';
+    nnCtx.font = '11px system-ui'; nnCtx.textAlign = 'center';
+    nnCtx.fillText(LAYERS[l].label, lx, 420-8);
+  }
+}
+
+function animateNN() {
+  // Update signals
+  signals = signals.filter(s => { s.p += 0.022; return s.p < 1; });
+  drawNN();
+  requestAnimationFrame(animateNN);
+}
+animateNN();
+
+// ============== CHARTS ==============
+function drawLineChart(canvasId, datasets, yLabel) {
+  const c = document.getElementById(canvasId);
+  const ctx = c.getContext('2d');
+  const r = c.parentElement.getBoundingClientRect();
+  c.width = (r.width - 24) * devicePixelRatio;
+  c.style.width = (r.width - 24) + 'px';
+  const W = c.width / devicePixelRatio, H = c.height;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  ctx.clearRect(0,0,W,H);
+
+  if (!datasets[0].data.length) return;
+
+  const pad = {l:40, r:10, t:10, b:20};
+  const cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
+
+  // Compute Y range
+  let yMax = 0.1;
+  datasets.forEach(d => d.data.forEach(v => { if(v>yMax) yMax=v; }));
+  yMax = Math.ceil(yMax * 1.2 * 10) / 10;
+  if (yMax < 0.1) yMax = 0.1;
+
+  // Grid
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const gridColor = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.04)';
+  const labelColor = isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.3)';
+  ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ch * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke();
+    ctx.fillStyle = labelColor; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+    ctx.fillText((yMax*(1-i/4)).toFixed(2), pad.l-5, y+3);
+  }
+
+  // Lines
+  datasets.forEach(ds => {
+    if (!ds.data.length) return;
+    ctx.beginPath(); ctx.strokeStyle = ds.color; ctx.lineWidth = 1.5;
+    ds.data.forEach((v, i) => {
+      const x = pad.l + (cw / Math.max(1, ds.data.length-1)) * i;
+      const y = pad.t + ch * (1 - v / yMax);
+      if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // Dot at end
+    if (ds.data.length) {
+      const last = ds.data.length-1;
+      const x = pad.l + (cw / Math.max(1, last)) * last;
+      const y = pad.t + ch * (1 - ds.data[last] / yMax);
+      ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fillStyle=ds.color; ctx.fill();
+    }
+  });
+
+  // Fill area for first dataset
+  if (datasets[0].fill && datasets[0].data.length > 1) {
+    ctx.beginPath();
+    datasets[0].data.forEach((v, i) => {
+      const x = pad.l + (cw / Math.max(1, datasets[0].data.length-1)) * i;
+      const y = pad.t + ch * (1 - v / yMax);
+      if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    const lastX = pad.l + cw;
+    ctx.lineTo(lastX, pad.t+ch); ctx.lineTo(pad.l, pad.t+ch); ctx.closePath();
+    ctx.fillStyle = datasets[0].fill; ctx.fill();
+  }
+}
+
+function renderCharts() {
+  const losses = dataPoints.map(d => d.loss);
+  const shrinks = dataPoints.map(d => d.loss_shrink).filter(v=>v!=null);
+  const threshs = dataPoints.map(d => d.loss_threshold).filter(v=>v!=null);
+  const bins = dataPoints.map(d => d.loss_binary).filter(v=>v!=null);
+
+  drawLineChart('loss-chart', [{data:losses, color:'#ff5252'}], 'Loss');
+  drawLineChart('acc-chart', [
+    {data:shrinks, color:'#e040fb', fill:'rgba(224,64,251,0.08)'},
+    {data:threshs, color:'#00e5ff'},
+    {data:bins, color:'#69f0ae'}
+  ], 'Sub');
+}
+
+// ============== UI UPDATES ==============
+function flashEl(el) { el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'), 300); }
+
+function updateMetrics(d) {
+  const mLoss = document.getElementById('m-loss');
+  mLoss.textContent = d.loss.toFixed(4);
+  mLoss.style.color = d.loss > 1.5 ? 'var(--red)' : d.loss < 0.5 ? 'var(--green)' : 'var(--yellow)';
+  flashEl(mLoss);
+
+  const mLr = document.getElementById('m-lr');
+  mLr.textContent = d.lr < 0.001 ? d.lr.toExponential(1) : d.lr.toFixed(6);
+  flashEl(mLr);
+
+  const mGpu = document.getElementById('m-gpu');
+  mGpu.textContent = d.gpu_mem ? d.gpu_mem + ' MB' : '—';
+  flashEl(mGpu);
+
+  const mGpuAlloc = document.getElementById('m-gpu-alloc');
+  mGpuAlloc.textContent = d.gpu_mem_alloc ? d.gpu_mem_alloc + ' MB' : '—';
+  flashEl(mGpuAlloc);
+
+  const mIps = document.getElementById('m-ips');
+  mIps.textContent = d.ips ? d.ips.toFixed(2) : '—';
+  flashEl(mIps);
+
+  const mBatchCost = document.getElementById('m-batch-cost');
+  mBatchCost.textContent = d.avg_batch_cost ? d.avg_batch_cost.toFixed(5) + ' s' : '—';
+  flashEl(mBatchCost);
+
+  const mReaderCost = document.getElementById('m-reader-cost');
+  mReaderCost.textContent = d.avg_reader_cost ? d.avg_reader_cost.toFixed(5) + ' s' : '—';
+  flashEl(mReaderCost);
+
+  const mAvgSamples = document.getElementById('m-avg-samples');
+  mAvgSamples.textContent = d.avg_samples ? d.avg_samples.toFixed(1) : '—';
+  flashEl(mAvgSamples);
+
+  // Sub-losses
+  if (d.loss_shrink != null) {
+    document.getElementById('sub-losses').style.display = 'grid';
+    document.getElementById('sl-shrink').textContent = d.loss_shrink.toFixed(4);
+    document.getElementById('sl-thresh').textContent = (d.loss_threshold||0).toFixed(4);
+    document.getElementById('sl-binary').textContent = (d.loss_binary||0).toFixed(4);
+    document.getElementById('sl-cbn').textContent = (d.loss_cbn||0).toFixed(4);
+  }
+}
+
+function updateProgress(d) {
+  const iter = d.iter || 0, maxIter = d.max_iter || 1;
+  const epoch = d.epoch || 0, maxEpoch = d.max_epoch || 1;
+  const pct = maxIter > 0 ? Math.min(100, (iter / maxIter) * 100) : 0;
+  document.getElementById('prog-fill').style.width = pct + '%';
+  let txt = `Epoch ${epoch}/${maxEpoch} — Step ${iter}/${maxIter} (${pct.toFixed(1)}%)`;
+  if (d.eta) txt += ` — ETA: ${d.eta}`;
+  document.getElementById('prog-text').textContent = txt;
+}
+
+function appendDataPoint(d) {
+  dataPoints.push(d);
+  if (dataPoints.length > MAX_PTS) dataPoints.shift();
+  latestData = d;
+}
+
+function triggerNNUpdate(d) {
+  forwardPass(d.loss || 1);
+  spawnSignals(d.loss || 1);
+}
+
+// ============== STATUS ==============
+function setStatus(s) {
+  wsStatus = s;
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  dot.className = 'status-dot ' + s;
+  const labels = {connected:'Terhubung', waiting:'Menunggu log...', disconnected:'Terputus'};
+  txt.textContent = labels[s] || s;
+}
+
+// ============== DEMO MODE ==============
+function startDemo() {
+  isDemo = true;
+  document.getElementById('demo-badge').style.display = 'inline';
+  demoStep = 0;
+  demoTimer = setInterval(() => {
+    demoStep++;
+    const loss = Math.max(0.3, 3.5 * Math.exp(-demoStep*0.03) + (Math.random()-0.5)*0.2);
+    const shrink = loss * 0.55 + (Math.random()-0.5)*0.1;
+    const thresh = loss * 0.25 + (Math.random()-0.5)*0.05;
+    const binary = loss * 0.15 + (Math.random()-0.5)*0.03;
+    const d = {
+      type:'training_update', epoch:Math.floor(demoStep/42)+1, max_epoch:75,
+      iter:(demoStep%42)*100+10, max_iter:4196, lr:0.0001*(1+Math.sin(demoStep*0.1)),
+      loss, loss_shrink:shrink, loss_threshold:thresh, loss_binary:binary,
+      loss_cbn:0.0, gpu_mem:3099, gpu_mem_alloc:2691,
+      ips:6.5+Math.random()*1.5, avg_batch_cost:0.55+Math.random()*0.05,
+      avg_reader_cost:0.005+Math.random()*0.002, avg_samples:4.0,
+      eta:'demo', timestamp:new Date().toISOString()
+    };
+    appendDataPoint(d); updateMetrics(d); updateProgress(d); renderCharts(); triggerNNUpdate(d);
+  }, 2000);
+}
+function stopDemo() {
+  if (demoTimer) clearInterval(demoTimer);
+  isDemo = false;
+  document.getElementById('demo-badge').style.display = 'none';
+}
+
+// ============== TRAINING CONTROL ==============
+let currentTrainStatus = 'idle';
+
+function updateTrainUI(status) {
+  currentTrainStatus = status;
+  const pulse = document.getElementById('train-pulse');
+  const label = document.getElementById('train-status-label');
+  const btnStart = document.getElementById('btn-start');
+  const btnStop = document.getElementById('btn-stop');
+
+  pulse.className = 'train-pulse ' + status;
+  const labels = {idle:'IDLE', running:'TRAINING...', stopping:'STOPPING...', error:'ERROR'};
+  label.textContent = labels[status] || status.toUpperCase();
+  label.style.color = status === 'running' ? 'var(--green)' : status === 'stopping' ? 'var(--yellow)' : status === 'error' ? 'var(--red)' : 'var(--text-dim)';
+
+  btnStart.disabled = status === 'running' || status === 'stopping';
+  btnStop.disabled = status !== 'running';
+  btnStart.classList.remove('loading');
+  btnStop.classList.remove('loading');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('train-toast');
+  t.textContent = msg;
+  t.className = 'train-toast ' + type + ' show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// === Start Modal Logic ===
+let trainMode = 'fresh';
+let checkpointsList = [];
+
+function trainStart() {
+  // Open modal instead of starting directly
+  trainMode = 'fresh';
+  selectTrainMode('fresh');
+  document.getElementById('start-modal').classList.add('open');
+}
+
+function closeStartModal() {
+  document.getElementById('start-modal').classList.remove('open');
+}
+
+function selectTrainMode(mode) {
+  trainMode = mode;
+  document.getElementById('opt-fresh').classList.toggle('selected', mode === 'fresh');
+  document.getElementById('opt-resume').classList.toggle('selected', mode === 'resume');
+  const ckptWrap = document.getElementById('ckpt-wrap');
+  ckptWrap.classList.toggle('show', mode === 'resume');
+  if (mode === 'resume' && checkpointsList.length === 0) {
+    fetchCheckpoints();
+  }
+}
+
+async function fetchCheckpoints() {
+  const loading = document.getElementById('ckpt-loading');
+  const select = document.getElementById('ckpt-select');
+  loading.style.display = 'block';
+  select.style.display = 'none';
+  try {
+    const res = await fetch('/api/checkpoints');
+    checkpointsList = await res.json();
+    select.innerHTML = '';
+    if (checkpointsList.length === 0) {
+      select.innerHTML = '<option value="">Tidak ada checkpoint</option>';
+    } else {
+      checkpointsList.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.path;
+        opt.textContent = c.name;
+        select.appendChild(opt);
+      });
+    }
+    loading.style.display = 'none';
+    select.style.display = 'block';
+  } catch(e) {
+    loading.textContent = 'Gagal memuat checkpoint';
+  }
+}
+
+async function confirmStart() {
+  closeStartModal();
+  const btn = document.getElementById('btn-start');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    // 1. Get current config
+    const cfgRes = await fetch('/api/config');
+    const cfg = await cfgRes.json();
+
+    // 2. Set checkpoint based on mode
+    if (trainMode === 'resume') {
+      const sel = document.getElementById('ckpt-select');
+      cfg.checkpoints = sel.value || '';
+    } else {
+      cfg.checkpoints = '';
+    }
+
+    // 3. Save updated config
+    await fetch('/api/config', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(cfg)
+    });
+
+    // 4. Start training
+    const res = await fetch('/api/train/start', {method:'POST'});
+    const data = await res.json();
+    if (data.ok) {
+      showToast(data.message || 'Training dimulai', 'success');
+      updateTrainUI('running');
+    } else {
+      showToast(data.error || 'Gagal memulai training', 'error');
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  } catch(e) {
+    showToast('Koneksi ke server gagal', 'error');
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('start-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeStartModal();
+});
+// Close modal on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeStartModal(); closeConfig(); }
+});
+
+// ============== CONFIG DRAWER ==============
+let cfgOpen = false;
+
+function toggleConfig() {
+  cfgOpen = !cfgOpen;
+  document.getElementById('cfg-drawer').classList.toggle('open', cfgOpen);
+  document.getElementById('cfg-overlay').classList.toggle('open', cfgOpen);
+  document.getElementById('cfg-toggle').classList.toggle('active', cfgOpen);
+  if (cfgOpen) loadConfig();
+}
+
+function closeConfig() {
+  cfgOpen = false;
+  document.getElementById('cfg-drawer').classList.remove('open');
+  document.getElementById('cfg-overlay').classList.remove('open');
+  document.getElementById('cfg-toggle').classList.remove('active');
+}
+
+function cfgStatus(msg, type) {
+  const el = document.getElementById('cfg-status');
+  el.textContent = msg;
+  el.className = 'cfg-status ' + type;
+  if (type === 'ok') setTimeout(() => el.className = 'cfg-status', 3000);
+}
+
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const c = await res.json();
+    document.getElementById('cfg-epoch').value = c.epoch_num || 50;
+    document.getElementById('cfg-lr').value = c.learning_rate || 0.001;
+    document.getElementById('cfg-warmup').value = c.warmup_epoch || 0;
+    document.getElementById('cfg-workers').value = c.num_workers || 4;
+    document.getElementById('cfg-bs-train').value = c.batch_size_train || 4;
+    document.getElementById('cfg-bs-eval').value = c.batch_size_eval || 1;
+    document.getElementById('cfg-gpu').checked = c.use_gpu !== false;
+    document.getElementById('cfg-train-dir').value = c.train_data_dir || '';
+    document.getElementById('cfg-train-label').value = c.train_label_file || '';
+    document.getElementById('cfg-eval-dir').value = c.eval_data_dir || '';
+    document.getElementById('cfg-eval-label').value = c.eval_label_file || '';
+    document.getElementById('cfg-pretrained').value = c.pretrained_model || '';
+    document.getElementById('cfg-checkpoints').value = c.checkpoints || '';
+    document.getElementById('cfg-save-dir').value = c.save_model_dir || '';
+    document.getElementById('cfg-save-step').value = c.save_epoch_step || 10;
+    document.getElementById('cfg-print-step').value = c.print_batch_step || 10;
+    document.getElementById('cfg-eval-start').value = c.eval_batch_step_start || 0;
+    document.getElementById('cfg-eval-interval').value = c.eval_batch_step_interval || 100;
+    document.getElementById('cfg-box-thresh').value = c.box_thresh || 0.6;
+    document.getElementById('cfg-unclip').value = c.unclip_ratio || 1.5;
+    cfgStatus('Config loaded', 'ok');
+  } catch(e) {
+    cfgStatus('Gagal memuat config dari server', 'err');
+  }
+}
+
+async function saveConfig() {
+  const btn = document.getElementById('cfg-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  const payload = {
+    epoch_num: parseInt(document.getElementById('cfg-epoch').value),
+    learning_rate: parseFloat(document.getElementById('cfg-lr').value),
+    warmup_epoch: parseInt(document.getElementById('cfg-warmup').value),
+    num_workers: parseInt(document.getElementById('cfg-workers').value),
+    batch_size_train: parseInt(document.getElementById('cfg-bs-train').value),
+    batch_size_eval: parseInt(document.getElementById('cfg-bs-eval').value),
+    use_gpu: document.getElementById('cfg-gpu').checked,
+    train_data_dir: document.getElementById('cfg-train-dir').value,
+    train_label_file: document.getElementById('cfg-train-label').value,
+    eval_data_dir: document.getElementById('cfg-eval-dir').value,
+    eval_label_file: document.getElementById('cfg-eval-label').value,
+    pretrained_model: document.getElementById('cfg-pretrained').value,
+    checkpoints: document.getElementById('cfg-checkpoints').value,
+    save_model_dir: document.getElementById('cfg-save-dir').value,
+    save_epoch_step: parseInt(document.getElementById('cfg-save-step').value),
+    print_batch_step: parseInt(document.getElementById('cfg-print-step').value),
+    eval_batch_step_start: parseInt(document.getElementById('cfg-eval-start').value),
+    eval_batch_step_interval: parseInt(document.getElementById('cfg-eval-interval').value),
+    box_thresh: parseFloat(document.getElementById('cfg-box-thresh').value),
+    unclip_ratio: parseFloat(document.getElementById('cfg-unclip').value)
+  };
+  try {
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      cfgStatus('Config disimpan ✓', 'ok');
+      showToast('Config disimpan', 'success');
+    } else {
+      cfgStatus(data.error || 'Gagal menyimpan', 'err');
+    }
+  } catch(e) {
+    cfgStatus('Koneksi ke server gagal', 'err');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Save Config';
+}
+
+async function trainStop() {
+  const btn = document.getElementById('btn-stop');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  updateTrainUI('stopping');
+  try {
+    const res = await fetch('/api/train/stop', {method:'POST'});
+    const data = await res.json();
+    if (data.ok) {
+      showToast(data.message || 'Training dihentikan', 'success');
+      updateTrainUI('idle');
+    } else {
+      showToast(data.error || 'Gagal menghentikan training', 'error');
+      updateTrainUI('running');
+    }
+  } catch(e) {
+    showToast('Koneksi ke server gagal', 'error');
+    updateTrainUI('running');
+  }
+}
+
+// Fetch initial train status on page load
+fetch('/api/train/status').then(r=>r.json()).then(d=>updateTrainUI(d.status||'idle')).catch(()=>{});
+
+// ============== WEBSOCKET ==============
+let ws, reconnectTimer;
+function connect() {
+  ws = new WebSocket('ws://localhost:8765');
+  ws.onopen = () => { setStatus('connected'); stopDemo(); };
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'history') {
+      stopDemo();
+      data.data.forEach(d => appendDataPoint(d));
+      if (data.data.length) {
+        updateMetrics(data.data[data.data.length-1]);
+        updateProgress(data.data[data.data.length-1]);
+        triggerNNUpdate(data.data[data.data.length-1]);
+      }
+      renderCharts();
+    }
+    if (data.type === 'training_update') {
+      stopDemo();
+      appendDataPoint(data); updateMetrics(data); updateProgress(data);
+      renderCharts(); triggerNNUpdate(data);
+    }
+    if (data.type === 'waiting') {
+      setStatus('waiting');
+      if (!isDemo) startDemo();
+    }
+    // Handle train_status broadcast from server
+    if (data.type === 'train_status') {
+      updateTrainUI(data.status || 'idle');
+    }
+    // Eval progress
+    if (data.type === 'eval_progress') {
+      const pct = data.pct || 0;
+      const sec = document.getElementById('eval-section');
+      sec.classList.add('show');
+      // Force reflow for CSS transition on first show
+      if (!sec._shown) { sec.offsetHeight; sec._shown = true; }
+      document.getElementById('eval-done-badge').classList.remove('show');
+      document.getElementById('eval-prog-fill').style.width = pct + '%';
+      document.getElementById('eval-prog-text').textContent = `Eval ${data.current}/${data.total} (${pct.toFixed(0)}%)`;
+      document.getElementById('eval-status').textContent = `${pct.toFixed(0)}% — ${data.current}/${data.total}`;
+      document.getElementById('eval-status').style.color = 'var(--cyan)';
+    }
+    // Eval result
+    if (data.type === 'eval_result') {
+      const sec = document.getElementById('eval-section');
+      sec.classList.add('show');
+      document.getElementById('eval-prog-fill').style.width = '100%';
+      document.getElementById('eval-prog-text').textContent = '✔ Evaluasi selesai';
+      document.getElementById('eval-status').textContent = 'Selesai ✔';
+      document.getElementById('eval-status').style.color = 'var(--green)';
+      document.getElementById('eval-done-badge').classList.add('show');
+      // Animated metric values
+      document.getElementById('ev-precision').textContent = data.precision.toFixed(4);
+      document.getElementById('ev-recall').textContent = data.recall.toFixed(4);
+      document.getElementById('ev-hmean').textContent = data.hmean.toFixed(4);
+      document.getElementById('ev-fps').textContent = data.fps.toFixed(2);
+      // Animated bar fills (scale 0-100%)
+      document.getElementById('ev-precision-bar').style.width = (data.precision * 100) + '%';
+      document.getElementById('ev-recall-bar').style.width = (data.recall * 100) + '%';
+      document.getElementById('ev-hmean-bar').style.width = (data.hmean * 100) + '%';
+      const fpsMax = Math.max(data.fps, 30);
+      document.getElementById('ev-fps-bar').style.width = Math.min(100, (data.fps / fpsMax) * 100) + '%';
+    }
+    // Best metric
+    if (data.type === 'best_metric') {
+      document.getElementById('best-banner').classList.add('show');
+      document.getElementById('best-hmean').textContent = data.hmean.toFixed(4);
+      document.getElementById('best-precision').textContent = data.precision.toFixed(4);
+      document.getElementById('best-recall').textContent = data.recall.toFixed(4);
+      document.getElementById('best-fps').textContent = data.fps.toFixed(2);
+      document.getElementById('best-epoch').textContent = data.best_epoch;
+    }
+  };
+  ws.onclose = () => { setStatus('disconnected'); reconnectTimer = setTimeout(connect, 3000); };
+  ws.onerror = () => { ws.close(); };
+}
+connect();
+
+// Start demo if no connection after 5s
+setTimeout(() => { if (wsStatus !== 'connected' && !isDemo) startDemo(); }, 5000);
+
+// Periodic chart resize
+window.addEventListener('resize', () => { if(dataPoints.length) renderCharts(); });
+</script>
+</body>
+</html>

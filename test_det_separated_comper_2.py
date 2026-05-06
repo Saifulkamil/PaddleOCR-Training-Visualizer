@@ -3,11 +3,11 @@ import shutil
 from paddleocr import TextDetection
 
 def main():
-    modelfineTune = TextDetection(model_dir="./result_model", model_name="PP-OCRv5_mobile_det")
+    modelfineTune = TextDetection(model_dir="./model_result_cek_poin_2_det", model_name="PP-OCRv5_mobile_det")
     modelasli = TextDetection(model_name="PP-OCRv5_mobile_det")
     
     # Konfigurasi Path Input
-    input_dir = "data_test/detection_display/asli"
+    input_dir = "data_test/image_detection/asli"
     
     # Setup Path Output untuk Komparasi
     out_dir = "./output_test_2/"

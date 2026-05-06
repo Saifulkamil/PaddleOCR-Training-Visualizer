@@ -2,24 +2,26 @@ Global:
   model_name: PP-OCRv5_mobile_det
   debug: false
   use_gpu: true
-  epoch_num: &epoch_num 200
+  epoch_num: 50
   log_smooth_window: 20
   print_batch_step: 10
   save_model_dir: ./output/det_db_finetune
   save_epoch_step: 10
   eval_batch_step:
-    - 0
-    - 100
+  - 0
+  - 500
   cal_metric_during_train: false
-  checkpoints:
+  checkpoints: null
   pretrained_model: ./pretrained/PP-OCRv5_mobile_det_pretrained
   save_inference_dir: ./output/det_db_finetune/inference
   use_visualdl: true
-  infer_img: ./dataset_finetune/images
+  infer_img: ./dataset_merged/images
   save_res_path: ./output/det_db_finetune/predicts_db.txt
-  d2s_train_image_shape: [3, 640, 640]
+  d2s_train_image_shape:
+  - 3
+  - 640
+  - 640
   distributed: true
-
 Architecture:
   model_type: det
   algorithm: DB
@@ -27,16 +29,15 @@ Architecture:
   Backbone:
     name: PPLCNetV3
     scale: 0.75
-    det: True
+    det: true
   Neck:
     name: RSEFPN
     out_channels: 96
-    shortcut: True
+    shortcut: true
   Head:
     name: DBHead
     k: 50
-    fix_nan: True
-
+    fix_nan: true
 Loss:
   name: DBLoss
   balance_loss: true
@@ -44,128 +45,124 @@ Loss:
   alpha: 5
   beta: 10
   ohem_ratio: 3
-
 Optimizer:
   name: Adam
   beta1: 0.9
   beta2: 0.999
   lr:
     name: Cosine
-    learning_rate: 0.001
-    warmup_epoch: 5
+    learning_rate: 0.0002
+    warmup_epoch: 0
   regularizer:
     name: L2
     factor: 5.0e-05
-
 PostProcess:
   name: DBPostProcess
   thresh: 0.3
-  box_thresh: 0.6
+  box_thresh: 0.7
   max_candidates: 1000
-  unclip_ratio: 1.5
-
+  unclip_ratio: 1.4
 Metric:
   name: DetMetric
   main_indicator: hmean
-
 Train:
   dataset:
     name: SimpleDataSet
-    data_dir: ./dataset_finetune/
+    data_dir: ./dataset_merged/
     label_file_list:
-      - ./dataset_finetune/train.txt
-    ratio_list: [1.0]
+    - ./dataset_merged/train.txt
+    ratio_list:
+    - 1.0
     transforms:
-      - DecodeImage:
-          img_mode: BGR
-          channel_first: false
-      - DetLabelEncode: null
-      - CopyPaste: null
-      - IaaAugment:
-          augmenter_args:
-            - type: Fliplr
-              args:
-                p: 0.5
-            - type: Affine
-              args:
-                rotate:
-                  - -10
-                  - 10
-            - type: Resize
-              args:
-                size:
-                  - 0.5
-                  - 3
-      - EastRandomCropData:
-          size:
-            - 640
-            - 640
-          max_tries: 50
-          keep_ratio: true
-      - MakeBorderMap:
-          shrink_ratio: 0.4
-          thresh_min: 0.3
-          thresh_max: 0.7
-          total_epoch: *epoch_num
-      - MakeShrinkMap:
-          shrink_ratio: 0.4
-          min_text_size: 8
-          total_epoch: *epoch_num
-      - NormalizeImage:
-          scale: 1./255.
-          mean:
-            - 0.485
-            - 0.456
-            - 0.406
-          std:
-            - 0.229
-            - 0.224
-            - 0.225
-          order: hwc
-      - ToCHWImage: null
-      - KeepKeys:
-          keep_keys:
-            - image
-            - threshold_map
-            - threshold_mask
-            - shrink_map
-            - shrink_mask
+    - DecodeImage:
+        img_mode: BGR
+        channel_first: false
+    - DetLabelEncode: null
+    - CopyPaste: null
+    - IaaAugment:
+        augmenter_args:
+        - type: Fliplr
+          args:
+            p: 0.5
+        - type: Affine
+          args:
+            rotate:
+            - -10
+            - 10
+        - type: Resize
+          args:
+            size:
+            - 0.5
+            - 3
+    - EastRandomCropData:
+        size:
+        - 640
+        - 640
+        max_tries: 50
+        keep_ratio: true
+    - MakeBorderMap:
+        shrink_ratio: 0.4
+        thresh_min: 0.3
+        thresh_max: 0.7
+        total_epoch: 50
+    - MakeShrinkMap:
+        shrink_ratio: 0.4
+        min_text_size: 8
+        total_epoch: 50
+    - NormalizeImage:
+        scale: 1./255.
+        mean:
+        - 0.485
+        - 0.456
+        - 0.406
+        std:
+        - 0.229
+        - 0.224
+        - 0.225
+        order: hwc
+    - ToCHWImage: null
+    - KeepKeys:
+        keep_keys:
+        - image
+        - threshold_map
+        - threshold_mask
+        - shrink_map
+        - shrink_mask
   loader:
     shuffle: true
     drop_last: false
     batch_size_per_card: 4
     num_workers: 4
-
 Eval:
   dataset:
     name: SimpleDataSet
-    data_dir: ./dataset_finetune/
+    data_dir: ./dataset_merged/
     label_file_list:
-      - ./dataset_finetune/valid.txt
+    - ./dataset_merged/valid.txt
     transforms:
-      - DecodeImage:
-          img_mode: BGR
-          channel_first: false
-      - DetLabelEncode: null
-      - DetResizeForTest:
-      - NormalizeImage:
-          scale: 1./255.
-          mean:
-            - 0.485
-            - 0.456
-            - 0.406
-          std:
-            - 0.229
-            - 0.224
-            - 0.225
-          order: hwc
-      - ToCHWImage: null
-      - KeepKeys:
-          keep_keys:
-            - image
-            - shape
-            - polys
-            - ignore_tags
+    - DecodeImage:
+        img_mode: BGR
+        channel_first: false
+    - DetLabelEncode: null
+    - DetResizeForTest: null
+    - NormalizeImage:
+        scale: 1./255.
+        mean:
+        - 0.485
+        - 0.456
+        - 0.406
+        std:
+        - 0.229
+        - 0.224
+        - 0.225
+        order: hwc
+    - ToCHWImage: null
+    - KeepKeys:
+        keep_keys:
+        - image
+        - shape
+        - polys
+        - ignore_tags
   loader:
     shuffle: false
     drop_last: false

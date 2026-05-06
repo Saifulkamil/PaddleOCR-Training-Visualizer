@@ -22,14 +22,21 @@ output/
 pretrained/
 result_model/
 reulst/
-PaddleOCR/
 log/
+PaddleOCR/
 __MACOSX/
 *.pdparams
 *.pdopt
 *.pdmodel
 *.pdiparams
 *.pdiparams.info
+*.zip
+*.tar.gz
+*.7z
+*.rar
+*.tar
+*.tgz
+*.tar.gz.tar
 
 # Data, datasets, images, and zips
 /data_test/
@@ -37,6 +44,13 @@ __MACOSX/
 /data_set/
 /dataset_finetune/
 /dataset_kaggle/
-/PaddleOCR/
 /downloaded_images_all/
-*.zip
+Paddle-Lite/
+
+cek_poin_2/
+dataset_merged/
+dataset_combined/
+dataset_finetune.zip
+dataset_valid_for_train/
+output_test_2/
+dataset_finetune.zip 

@@ -126,28 +126,14 @@ def main():
         print("\n❌ Gagal membuat dataset. Tidak ada JSON dan Gambar valid yang berhasil dipasangkan.")
         return
 
-    # Shuffle (acak urutan) untuk split data menjadi Train dan Validation
-    random.shuffle(label_lines)
-    
-    # Membagi 80% Train, 20% Val
-    split_idx = int(len(label_lines) * 0.8)
-    train_lines = label_lines[:split_idx]
-    val_lines = label_lines[split_idx:]
-    
-    # Tulis train.txt
+    # Tulis semua data ke train.txt
     train_txt_path = os.path.join(dataset_dir, "train.txt")
     with open(train_txt_path, 'w', encoding='utf-8') as f:
-        f.write("\n".join(train_lines))
-        
-    # Tulis valid.txt
-    val_txt_path = os.path.join(dataset_dir, "valid.txt")
-    with open(val_txt_path, 'w', encoding='utf-8') as f:
-        f.write("\n".join(val_lines))
+        f.write("\n".join(label_lines))
         
     print("\n✅ Pembuatan Dataset Format Kaggle / PaddleOCR Selesai!")
     print(f"Total Data Tersedia : {len(label_lines)} gambar")
-    print(f"Data Training       : {len(train_lines)} gambar (Train.txt)")
-    print(f"Data Validation     : {len(val_lines)} gambar (Valid.txt)")
+    print(f"Data Training       : {len(label_lines)} gambar (Train.txt)")
     print(f"Directory Dataset   : {os.path.abspath(dataset_dir)}")
 
 if __name__ == '__main__':
