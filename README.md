@@ -1,4 +1,4 @@
-# 🚀 PaddleOCR Real-Time Training Visualizer
+<img width="1902" height="908" alt="image" src="https://github.com/user-attachments/assets/046524f0-a4a1-43e2-b777-62f6ca06ffc1" /># 🚀 PaddleOCR Real-Time Training Visualizer
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
@@ -26,11 +26,13 @@ Dengan antarmuka yang modern dan responsif, Anda tidak perlu lagi melihat log di
 *(Catatan: Ganti placeholder gambar dan video di bawah ini dengan tangkapan layar asli dari aplikasi Anda)*
 
 ### Dashboard Utama (Dark Mode)
-![Dashboard Dark Mode](./assets/dashboard_dark.png)
+![Dashboard Light Mode](<img width="1902" height="908" alt="image" src="https://github.com/user-attachments/assets/3e362108-a913-48e8-9e6c-6d24674fa6a6" />
+)
 *Tampilan utama dashboard yang menunjukkan grafik real-time dan log training.*
 
 ### Konfigurasi Training
-![Configuration Settings](./assets/config_settings.png)
+![Configuration Settings](<img width="1904" height="908" alt="image" src="https://github.com/user-attachments/assets/93798ad2-5302-4cae-b07d-095242d97cc0" />
+)
 *Antarmuka untuk mengatur parameter YAML sebelum memulai training.*
 
 ### 🎥 Demo Video
