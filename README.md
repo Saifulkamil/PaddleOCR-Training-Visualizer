@@ -1,3 +1,5 @@
+
+
 # 🚀 PaddleOCR Real-Time Training Visualizer
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -24,23 +26,62 @@ Dengan antarmuka yang modern dan responsif, Anda tidak perlu lagi melihat log di
 ## 📸 Tampilan Antarmuka (Screenshots & Video)
 
 *(Catatan: Ganti placeholder gambar dan video di bawah ini dengan tangkapan layar asli dari aplikasi Anda)*
+<div align="center">
 
-### Dashboard Utama (Dark Mode)
-![Dashboard Light Mode](<img width="1902" height="908" alt="image" src="https://github.com/user-attachments/assets/3e362108-a913-48e8-9e6c-6d24674fa6a6" />
-)
-*Tampilan utama dashboard yang menunjukkan grafik real-time dan log training.*
+# 🖥️ ML Training Dashboard
 
-### Konfigurasi Training
-![Configuration Settings](<img width="1904" height="908" alt="image" src="https://github.com/user-attachments/assets/93798ad2-5302-4cae-b07d-095242d97cc0" />
-)
-*Antarmuka untuk mengatur parameter YAML sebelum memulai training.*
+**Real-time monitoring & configuration for machine learning training pipelines**
 
-### 🎥 Demo Video
-[![Watch the video](./assets/video_thumbnail.png)](./assets/demo_video.mp4)
-*Klik gambar di atas untuk melihat video demonstrasi aplikasi.*
+![Python](https://img.shields.io/badge/Python-3.10+-1D9E75?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-378ADD?style=flat-square&logo=fastapi&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-534AB7?style=flat-square)
+![Dark Mode](https://img.shields.io/badge/dark_mode-supported-0f1117?style=flat-square)
 
-*(Untuk menambahkan gambar/video, buat folder `assets` di direktori proyek dan masukkan file Anda ke dalamnya).*
+</div>
 
+---
+
+## 🖥️ Dashboard Utama
+
+![Dashboard Main](./docs/dashboard.png)
+
+> Tampilan utama — grafik loss/accuracy real-time dan log training yang mengalir langsung.
+
+---
+
+## ⚙️ Konfigurasi Training
+
+![Configuration](./docs/config.png)
+
+> Editor parameter YAML interaktif — ubah hyperparameter dan mulai training tanpa restart server.
+
+---
+
+## 🎥 Demo Video
+
+[![Watch Demo](./docs/thumbnail.png)](https://link-ke-video-kamu)
+
+> Klik thumbnail di atas untuk melihat demo lengkap aplikasi.
+
+---
+
+## ✨ Fitur Utama
+
+| Fitur | Deskripsi |
+|---|---|
+| 📈 Real-time Monitoring | Grafik loss, accuracy, dan metrik diperbarui setiap step |
+| 📝 YAML Configuration | Edit parameter training langsung dari UI |
+| 🌙 Dark Mode | Tampilan gelap yang nyaman untuk sesi panjang |
+
+---
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/user/ml-dashboard
+pip install -r requirements.txt
+python main.py
+```
 ---
 
 ## 🛠️ Prasyarat (Requirements)
