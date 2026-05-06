@@ -1,4 +1,4 @@
-<img width="1902" height="908" alt="image" src="https://github.com/user-attachments/assets/046524f0-a4a1-43e2-b777-62f6ca06ffc1" /># 🚀 PaddleOCR Real-Time Training Visualizer
+# 🚀 PaddleOCR Real-Time Training Visualizer
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
