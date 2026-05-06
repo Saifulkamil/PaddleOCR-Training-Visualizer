@@ -1,143 +1,192 @@
-
-
-# 🚀 PaddleOCR Real-Time Training Visualizer
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-![PaddleOCR](https://img.shields.io/badge/PaddleOCR-Supported-green)
-
-Aplikasi ini adalah **Real-Time Neural Network Visualizer & Training Controller** berbasis web untuk memantau dan mengontrol proses pelatihan model [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR). 
-
-Dengan antarmuka yang modern dan responsif, Anda tidak perlu lagi melihat log di terminal yang membosankan. Dashboard ini menyediakan grafik real-time, animasi neural network, serta kontrol penuh terhadap konfigurasi dan proses training Anda.
-
----
-
-## ✨ Fitur Utama
-
-- 📊 **Real-Time Metrics Visualization**: Pantau Loss, Akurasi (HMean), Precision, dan Recall secara langsung saat training berjalan.
-- 🎛️ **Training Controller**: Mulai (Start) dan Hentikan (Stop) proses training langsung dari antarmuka Web.
-- ⚙️ **Dynamic Configuration Editor**: Ubah parameter training (seperti epoch, learning rate, batch size, dataset path) langsung dari UI tanpa harus mengedit file YAML secara manual.
-- 🌓 **Light/Dark Mode Theme**: Antarmuka modern yang mendukung mode gelap dan terang sesuai preferensi Anda.
-- 🧠 **Animated Neural Network UI**: Visualisasi interaktif arsitektur jaringan yang merespon terhadap proses training.
-- ⚡ **WebSocket & HTTP API**: Menggunakan arsitektur WebSocket untuk update data real-time dengan latensi rendah.
-
----
-
-## 📸 Tampilan Antarmuka (Screenshots & Video)
-
-*(Catatan: Ganti placeholder gambar dan video di bawah ini dengan tangkapan layar asli dari aplikasi Anda)*
 <div align="center">
 
-# 🖥️ ML Training Dashboard
+<br>
 
-**Real-time monitoring & configuration for machine learning training pipelines**
+<img src="https://img.shields.io/badge/-%F0%9F%A7%A0%20PaddleOCR%20Training%20Visualizer-0d1117?style=for-the-badge" alt="title" />
 
-![Python](https://img.shields.io/badge/Python-3.10+-1D9E75?style=flat-square&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-378ADD?style=flat-square&logo=fastapi&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-534AB7?style=flat-square)
-![Dark Mode](https://img.shields.io/badge/dark_mode-supported-0f1117?style=flat-square)
+<br><br>
+
+**Dashboard web modern untuk memantau dan mengontrol proses pelatihan model OCR secara real-time**
+
+*Tanpa perlu buka terminal lagi.*
+
+<br>
+
+[![License](https://img.shields.io/badge/license-MIT-2ea043?style=flat-square&logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.8+-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![PaddleOCR](https://img.shields.io/badge/PaddleOCR-Supported-0097a7?style=flat-square)](https://github.com/PaddlePaddle/PaddleOCR)
+[![WebSocket](https://img.shields.io/badge/WebSocket-Real--Time-f59e0b?style=flat-square)](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
+[![Dark Mode](https://img.shields.io/badge/Dark_Mode-Supported-6366f1?style=flat-square)](.)
+[![YAML](https://img.shields.io/badge/YAML-Config-888?style=flat-square)](.)
+
+<br>
+
+[**Lihat Demo →**](#-demo-video) · [**Cara Pakai →**](#-cara-menjalankan) · [**Kontribusi →**](#-kontribusi)
+
+<br>
 
 </div>
 
 ---
 
-## 🖥️ Dashboard Utama
+## ✨ Fitur Utama
 
-![Dashboard Main](./docs/dashboard.png)
+<table>
+<tr>
+<td width="50%">
 
-> Tampilan utama — grafik loss/accuracy real-time dan log training yang mengalir langsung.
+**📊 Real-Time Metrics**
+Pantau Loss, HMean, Precision, dan Recall secara langsung saat training berjalan — diperbarui setiap step.
+
+</td>
+<td width="50%">
+
+**🎛️ Training Controller**
+Start dan Stop training langsung dari UI tanpa menyentuh terminal sama sekali.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**⚙️ Dynamic YAML Editor**
+Edit epoch, learning rate, batch size, dan dataset path langsung dari browser.
+
+</td>
+<td width="50%">
+
+**🧠 Neural Network UI**
+Visualisasi arsitektur jaringan yang beranimasi dan merespons proses training.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**⚡ WebSocket API**
+Arsitektur WebSocket untuk update data real-time dengan latensi sangat rendah.
+
+</td>
+<td width="50%">
+
+**🌓 Light / Dark Mode**
+Antarmuka modern yang nyaman dipakai siang maupun malam hari.
+
+</td>
+</tr>
+</table>
 
 ---
 
-## ⚙️ Konfigurasi Training
+## 📸 Tampilan Antarmuka
 
-![Configuration](./docs/config.png)
+### 🖥️ Dashboard Utama
+
+> Tampilan utama — grafik loss/accuracy real-time dan log training yang mengalir langsung.
+
+![Dashboard Utama](https://github.com/user-attachments/assets/3e362108-a913-48e8-9e6c-6d24674fa6a6)
+---
+
+### ⚙️ Konfigurasi Training
 
 > Editor parameter YAML interaktif — ubah hyperparameter dan mulai training tanpa restart server.
+
+![Konfigurasi](https://github.com/user-attachments/assets/93798ad2-5302-4cae-b07d-095242d97cc0)
 
 ---
 
 ## 🎥 Demo Video
 
-[![Watch Demo](./docs/thumbnail.png)](https://link-ke-video-kamu)
+> Klik thumbnail di bawah untuk menonton demo lengkap aplikasi.
 
-> Klik thumbnail di atas untuk melihat demo lengkap aplikasi.
+[![Tonton Demo](https://github.com/user-attachments/assets/875bb5fe-9ed4-4cdf-afa3-24090ded1ab6)
 
 ---
 
-## ✨ Fitur Utama
+## 🛠️ Prasyarat
 
-| Fitur | Deskripsi |
+Pastikan hal-hal berikut sudah tersedia sebelum menjalankan aplikasi:
+
+| Prasyarat | Keterangan |
 |---|---|
-| 📈 Real-time Monitoring | Grafik loss, accuracy, dan metrik diperbarui setiap step |
-| 📝 YAML Configuration | Edit parameter training langsung dari UI |
-| 🌙 Dark Mode | Tampilan gelap yang nyaman untuk sesi panjang |
-
----
-
-## 🚀 Quick Start
+| **Python 3.8+** | Versi Python yang kompatibel |
+| **websockets** | `pip install websockets` |
+| **pyyaml** | `pip install pyyaml` |
+| **PaddleOCR** | Folder `PaddleOCR/` harus ada di dalam direktori proyek |
 
 ```bash
-git clone https://github.com/user/ml-dashboard
-pip install -r requirements.txt
-python main.py
+pip install websockets pyyaml
 ```
----
-
-## 🛠️ Prasyarat (Requirements)
-
-Sebelum menjalankan aplikasi, pastikan Anda telah menginstal dependensi berikut:
-
-- **Python 3.8+**
-- Modul Python yang dibutuhkan:
-  ```bash
-  pip install websockets pyyaml
-  ```
-- **PaddleOCR**: Pastikan repositori PaddleOCR sudah ada di dalam direktori proyek ini (folder `PaddleOCR/`).
 
 ---
 
-## 🚀 Cara Menjalankan Aplikasi
+## 🚀 Cara Menjalankan
 
-1. **Clone atau buka direktori proyek ini:**
-   ```bash
-   cd d:/kerja/AI/ocr
-   ```
+**1. Masuk ke direktori proyek**
 
-2. **Jalankan Server:**
-   Anda dapat menjalankan server dengan mengeksekusi file `server.py`. Jika Anda memiliki path log file khusus, Anda bisa menyertakannya sebagai argumen (default: `./output/det_db_finetune/train.log`).
-   
-   ```bash
-   python server.py
-   ```
+```bash
+cd [DIR]/ocr
+```
 
-3. **Buka Dashboard di Browser:**
-   Setelah server berjalan, buka browser web Anda dan navigasikan ke alamat berikut:
-   
-   ```text
-   http://localhost:8080
-   ```
+**2. Jalankan server backend**
+
+```bash
+python server.py
+```
+
+> Secara default, server akan membaca log dari `./output/det_db_finetune/train.log`.
+> Kamu juga bisa menentukan path log kustom sebagai argumen:
+> ```bash
+> python server.py ./path/ke/custom.log
+> ```
+
+**3. Buka dashboard di browser**
+
+```
+http://localhost:8080
+```
 
 ---
 
-## 📂 Struktur Direktori Utama
+## 📂 Struktur Direktori
 
-```text
+```
 📁 ocr/
-├── 📄 server.py            # Backend server (WebSocket + HTTP API)
-├── 📄 index.html           # Frontend dashboard (UI)
-├── 📄 ocr_finetune_det.yml # File konfigurasi PaddleOCR
-├── 📁 PaddleOCR/           # Direktori instalasi PaddleOCR
-├── 📁 output/              # Hasil training dan logs
-└── 📁 dataset/             # Kumpulan data untuk training
+├── 📄 server.py              # Backend server (WebSocket + HTTP API)
+├── 📄 index.html             # Frontend dashboard (UI)
+├── 📄 ocr_finetune_det.yml   # File konfigurasi PaddleOCR
+├── 📁 PaddleOCR/             # Direktori instalasi PaddleOCR
+├── 📁 output/                # Hasil training dan log
+└── 📁 dataset/               # Data untuk training
 ```
 
 ---
 
 ## 🤝 Kontribusi
 
-Kritik, saran, dan kontribusi sangat dipersilakan! Jangan ragu untuk membuat *Pull Request* atau melaporkan masalah (*Issues*) jika Anda menemukan bug atau memiliki ide fitur baru.
+Kritik, saran, dan kontribusi sangat disambut! Ada beberapa cara untuk ikut berkontribusi:
+
+- 🐛 **Laporkan bug** — Buka [Issues](../../issues) dan jelaskan masalah yang kamu temukan
+- 💡 **Usulkan fitur** — Diskusikan ide baru di [Discussions](../../discussions) atau buka Feature Request
+- 🔧 **Kirim Pull Request** — Fork repo ini, buat branch baru, lalu kirim PR
+
+```bash
+git clone https://github.com/username/repo.git
+git checkout -b feat/nama-fitur
+git commit -m "feat: tambahkan fitur X"
+git push origin feat/nama-fitur
+```
+
+---
 
 ## 📄 Lisensi
 
-Proyek ini dilisensikan di bawah [MIT License](LICENSE).
+Proyek ini dilisensikan di bawah **[MIT License](LICENSE)** — bebas digunakan, dimodifikasi, dan didistribusikan.
+
+---
+
+<div align="center">
+
+Dibuat dengan ☕ untuk komunitas ML Indonesia
+
+</div>
