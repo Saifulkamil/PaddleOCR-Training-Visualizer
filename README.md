@@ -2,9 +2,16 @@
 
 <br>
 
-<img src="https://img.shields.io/badge/-%F0%9F%A7%A0%20PaddleOCR%20Training%20Visualizer-0d1117?style=for-the-badge" alt="title" />
+```
+███╗   ███╗██╗          ████████╗██████╗  █████╗ ██╗███╗   ██╗██╗███╗   ██╗ ██████╗
+████╗ ████║██║          ╚══██╔══╝██╔══██╗██╔══██╗██║████╗  ██║██║████╗  ██║██╔════╝
+██╔████╔██║██║             ██║   ██████╔╝███████║██║██╔██╗ ██║██║██╔██╗ ██║██║  ███╗
+██║╚██╔╝██║██║             ██║   ██╔══██╗██╔══██║██║██║╚██╗██║██║██║╚██╗██║██║   ██║
+██║ ╚═╝ ██║███████╗        ██║   ██║  ██║██║  ██║██║██║ ╚████║██║██║ ╚████║╚██████╔╝
+╚═╝     ╚═╝╚══════╝        ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝
+```
 
-<br><br>
+# 🧠 PaddleOCR Training Visualizer
 
 **Dashboard web modern untuk memantau dan mengontrol proses pelatihan model OCR secara real-time**
 
@@ -85,6 +92,7 @@ Antarmuka modern yang nyaman dipakai siang maupun malam hari.
 > Tampilan utama — grafik loss/accuracy real-time dan log training yang mengalir langsung.
 
 ![Dashboard Utama](https://github.com/user-attachments/assets/3e362108-a913-48e8-9e6c-6d24674fa6a6)
+
 ---
 
 ### ⚙️ Konfigurasi Training
@@ -98,9 +106,9 @@ Antarmuka modern yang nyaman dipakai siang maupun malam hari.
 ## 🎥 Demo Video
 
 > Klik thumbnail di bawah untuk menonton demo lengkap aplikasi.
-
-[![Tonton Demo](https://github.com/user-attachments/assets/875bb5fe-9ed4-4cdf-afa3-24090ded1ab6)
-
+ 
+<video src="https://github.com/user-attachments/assets/875bb5fe-9ed4-4cdf-afa3-24090ded1ab6" width="100%" controls>
+</video>
 ---
 
 ## 🛠️ Prasyarat
@@ -125,7 +133,7 @@ pip install websockets pyyaml
 **1. Masuk ke direktori proyek**
 
 ```bash
-cd [DIR]/ocr
+cd [dir]/ocr
 ```
 
 **2. Jalankan server backend**
