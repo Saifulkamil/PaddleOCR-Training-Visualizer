@@ -54,3 +54,5 @@ dataset_finetune.zip
 dataset_valid_for_train/
 output_test_2/
 dataset_finetune.zip 
+log_kegiatan.csv
+history_commit.sh
